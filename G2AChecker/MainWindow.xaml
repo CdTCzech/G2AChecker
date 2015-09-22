@@ -1,0 +1,38 @@
+﻿<Window x:Class="G2AChecker.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:G2AChecker"
+        mc:Ignorable="d"
+        Title="G2AChecker" Height="600" Width="898.29" Loaded="Window_Loaded">
+    <Window.Resources>
+        <CollectionViewSource x:Key="gameViewSource" d:DesignSource="{d:DesignInstance {x:Type local:Game}, CreateList=True}"/>
+    </Window.Resources>
+    <Grid DataContext="{StaticResource gameViewSource}">
+        <TextBox x:Name="UrlTextBox" HorizontalAlignment="Stretch" Height="23" Margin="10,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="Auto" FontSize="10.667" ToolTip="game url - for example: https://www.g2a.com/mad-max-plus-the-ripper-dlc-steam-cd-key-global.html"/>
+        <Button x:Name="AddGameButton" Content="Add Game" HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Width="75" Click="addGameButton_Click"/>
+        <Button x:Name="UpdateButton" Content="Update Prices" HorizontalAlignment="Left" Margin="90,38,0,0" VerticalAlignment="Top" Width="84" Click="updateButton_Click"/>
+        <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Left" Height="20" Margin="729,36,10,0" VerticalAlignment="Top" Width="150"/>
+        <CheckBox x:Name="UpdateCheckBox" Content="Update Every: " HorizontalAlignment="Left" Margin="179,41,0,0" VerticalAlignment="Top" Checked="updateCheckBox_Checked" Unchecked="updateCheckBox_Unchecked"/>
+        <DataGrid x:Name="GamesDataGrid" AutoGenerateColumns="False" EnableRowVirtualization="True" ItemsSource="{Binding}" Margin="9,63,11,10">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Open in browser" Click="OpenInBrowserMenuItem"/>
+                    <MenuItem Header="Update" Click="UpdateMenuItem"/>
+                    <MenuItem Header="Delete" Click="DeleteMenuItem"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+                <DataGridTextColumn x:Name="IdColumn" Binding="{Binding Id}" Header="ID" Width="Auto"/>
+                <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" Header="Name" Width="Auto"/>
+                <DataGridTextColumn x:Name="PriceColumn" Binding="{Binding Price}" Header="Price" Width="Auto"/>
+                <DataGridTextColumn x:Name="MinPriceColumn" Binding="{Binding MinPrice}" Header="Min Price" Width="Auto"/>
+                <DataGridTextColumn x:Name="MinPriceDateColumn" Binding="{Binding MinPriceDate}" Header="Min Price Date" Width="Auto"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <CheckBox x:Name="InformationCheckBox" Content="Show Information Dialogs" HorizontalAlignment="Left" Margin="567,41,0,0" VerticalAlignment="Top" IsChecked="True"/>
+        <TextBox x:Name="UpdateTextBox" HorizontalAlignment="Left" Height="23" Margin="275,39,0,0" TextWrapping="Wrap" Text="60" VerticalAlignment="Top" Width="70" TextChanged="UpdateTextBox_TextChanged"/>
+        <Label x:Name="UpdateLabel" Content="Minutes." HorizontalAlignment="Left" Margin="345,35,0,0" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
