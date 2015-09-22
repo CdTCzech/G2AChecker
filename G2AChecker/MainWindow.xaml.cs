@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 using static System.Windows.Controls.Primitives.RangeBase;
 
@@ -20,6 +21,8 @@ namespace G2AChecker
 		private WebClient webClient = new WebClient();
 		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
 		private Dictionary<int, Game> m_games = new Dictionary<int, Game>();
+
+		private int m_minutes;
 
 		public MainWindow()
 		{
@@ -38,6 +41,7 @@ namespace G2AChecker
 			GamesDataGrid.IsReadOnly = true;
 			dispatcherTimer.Tick += dispatcherTimer_Tick;
 			dispatcherTimer.Interval = new TimeSpan(1, 0, 0);
+			m_minutes = 60;
 		}
 
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -227,18 +231,8 @@ namespace G2AChecker
 
 		private void updateCheckBox_Checked(object sender, RoutedEventArgs e)
 		{
-			int minutes;
-			if (int.TryParse(UpdateTextBox.Text, out minutes))
-			{
-				dispatcherTimer.Interval = new TimeSpan(0, minutes, 0);
-				dispatcherTimer.Start();
-			}
-			else
-			{
-				UpdateTextBox.Text = "INVALID";
-				UpdateCheckBox.IsChecked = false;
-			}
-			
+			dispatcherTimer.Interval = new TimeSpan(0, m_minutes, 0);
+			dispatcherTimer.Start();
 		}
 
 		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -267,7 +261,42 @@ namespace G2AChecker
 
 		private void UpdateTextBox_TextChanged(object sender, TextChangedEventArgs e)
 		{
+			if (UpdateTextBox.Text.Length == 0)
+			{
+				m_minutes = 5;
+				return;
+			}
+
+			int minutes;
+			if (int.TryParse(UpdateTextBox.Text, out minutes))
+			{
+				UpdateCheckBox.IsChecked = false;
+				m_minutes = (minutes > 4) ? minutes : 5;
+				UpdateTextBox.Text = m_minutes.ToString();
+			}
+			else
+			{
+				UpdateTextBox.Text = m_minutes.ToString();
+			}
+		}
+
+		private void UpButton_Click(object sender, RoutedEventArgs e)
+		{
 			UpdateCheckBox.IsChecked = false;
+			++m_minutes;
+			UpdateTextBox.Text = m_minutes.ToString();
+		}
+
+		private void DownButton_Click(object sender, RoutedEventArgs e)
+		{
+			UpdateCheckBox.IsChecked = false;
+			--m_minutes;
+			UpdateTextBox.Text = m_minutes.ToString();
+		}
+
+		private void UpdateTextBox_LostFocus(object sender, RoutedEventArgs e)
+		{
+			UpdateTextBox.Text = m_minutes.ToString();
 		}
 	}
 }
