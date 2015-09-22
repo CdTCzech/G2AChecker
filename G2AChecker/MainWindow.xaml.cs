@@ -7,22 +7,18 @@ using System.Linq;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Navigation;
 using System.Windows.Threading;
 using static System.Windows.Controls.Primitives.RangeBase;
 
 namespace G2AChecker
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
 	public partial class MainWindow : IDisposable
 	{
-		private WebClient webClient = new WebClient();
-		private DispatcherTimer dispatcherTimer = new DispatcherTimer();
-		private Dictionary<int, Game> m_games = new Dictionary<int, Game>();
+		private readonly WebClient _webClient = new WebClient();
+		private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
+		private readonly Dictionary<int, Game> _games = new Dictionary<int, Game>();
 
-		private int m_minutes;
+		private int _minutes;
 
 		public MainWindow()
 		{
@@ -31,7 +27,7 @@ namespace G2AChecker
 			{
 				var gamesJson = (JObject.Parse(File.ReadAllText(@"db.json"))["games"]).ToString();
 				var games = JsonConvert.DeserializeObject<List<Game>>(gamesJson);
-				m_games = games.ToDictionary(g => g.Id, g => g);
+				_games = games.ToDictionary(g => g.Id, g => g);
 			}
 			catch (Exception)
 			{
@@ -39,9 +35,9 @@ namespace G2AChecker
 			}
 
 			GamesDataGrid.IsReadOnly = true;
-			dispatcherTimer.Tick += dispatcherTimer_Tick;
-			dispatcherTimer.Interval = new TimeSpan(1, 0, 0);
-			m_minutes = 60;
+			_dispatcherTimer.Tick += dispatcherTimer_Tick;
+			_dispatcherTimer.Interval = new TimeSpan(1, 0, 0);
+			_minutes = 60;
 		}
 
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -56,7 +52,7 @@ namespace G2AChecker
 
 			try
 			{
-				pageString = webClient.DownloadString(UrlTextBox.Text);
+				pageString = _webClient.DownloadString(UrlTextBox.Text);
 			}
 			catch (Exception)
 			{
@@ -77,14 +73,14 @@ namespace G2AChecker
 				int gameId;
 				if (int.TryParse(id, out gameId))
 				{
-					if (!m_games.ContainsKey(gameId))
+					if (!_games.ContainsKey(gameId))
 					{
 						decimal price;
 
 						try
 						{
 							var result =
-								JObject.Parse(webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + gameId));
+								JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + gameId));
 
 							price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
 								MidpointRounding.AwayFromZero);
@@ -95,7 +91,7 @@ namespace G2AChecker
 							ShowMessageBox("Game " + gameName + " doesn't have any offers.", "Information");
 						}
 
-						m_games.Add(gameId,
+						_games.Add(gameId,
 							new Game()
 							{
 								Id = gameId,
@@ -134,7 +130,7 @@ namespace G2AChecker
 
 		private void updateButton_Click(object sender, RoutedEventArgs e)
 		{
-			UpdateGames(m_games.Keys);
+			UpdateGames(_games.Keys);
 
 			SaveDatabase();
 			GamesDataGrid.Items.Refresh();
@@ -153,19 +149,19 @@ namespace G2AChecker
 			{
 				try
 				{
-					var result = JObject.Parse(webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + id));
-					m_games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
+					var result = JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + id));
+					_games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
 						MidpointRounding.AwayFromZero);
-					if (m_games[id].MinPrice > m_games[id].Price || m_games[id].MinPrice == 0)
+					if (_games[id].MinPrice > _games[id].Price || _games[id].MinPrice == 0)
 					{
-						m_games[id].MinPrice = m_games[id].Price;
-						m_games[id].MinPriceDate = DateTime.Now;
+						_games[id].MinPrice = _games[id].Price;
+						_games[id].MinPriceDate = DateTime.Now;
 					}
 				}
 				catch (Exception)
 				{
-					m_games[id].Price = 0;
-					ShowMessageBox("Game " + m_games[id].Name + " doesn't have any offers.", "Information");
+					_games[id].Price = 0;
+					ShowMessageBox("Game " + _games[id].Name + " doesn't have any offers.", "Information");
 				}
 
 				Dispatcher.Invoke(updatePbDelegate, DispatcherPriority.Background, ValueProperty, ++ProgressBar.Value);
@@ -179,7 +175,7 @@ namespace G2AChecker
 			var selectedGames = item?.SelectedItems;
 
 			if (selectedGames == null) return ids;
-			ids.AddRange(from Game game in selectedGames where game != null && m_games.ContainsKey(game.Id) select game.Id);
+			ids.AddRange(from Game game in selectedGames where game != null && _games.ContainsKey(game.Id) select game.Id);
 
 			return ids;
 		}
@@ -188,7 +184,7 @@ namespace G2AChecker
 		{
 			foreach (var id in GetSelectedIds(sender))
 			{
-				m_games.Remove(id);
+				_games.Remove(id);
 			}
 
 			SaveDatabase();
@@ -207,7 +203,7 @@ namespace G2AChecker
 		{
 			foreach (var id in GetSelectedIds(sender))
 			{
-				System.Diagnostics.Process.Start(m_games[id].Url);
+				System.Diagnostics.Process.Start(_games[id].Url);
 			}
 		}
 
@@ -216,7 +212,7 @@ namespace G2AChecker
 			var toStore = new JObject
 					{
 						{
-							"games", JToken.FromObject(m_games.Values)
+							"games", JToken.FromObject(_games.Values)
 						}
 					};
 			try
@@ -231,19 +227,19 @@ namespace G2AChecker
 
 		private void updateCheckBox_Checked(object sender, RoutedEventArgs e)
 		{
-			dispatcherTimer.Interval = new TimeSpan(0, m_minutes, 0);
-			dispatcherTimer.Start();
+			_dispatcherTimer.Interval = new TimeSpan(0, _minutes, 0);
+			_dispatcherTimer.Start();
 		}
 
 		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
 		{
-			dispatcherTimer.Stop();
+			_dispatcherTimer.Stop();
 		}
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			var gameViewSource = ((System.Windows.Data.CollectionViewSource)(FindResource("gameViewSource")));
-			gameViewSource.Source = m_games.Values;
+			gameViewSource.Source = _games.Values;
 		}
 
 		private void ShowMessageBox(string text, string caption)
@@ -256,14 +252,14 @@ namespace G2AChecker
 
 		public void Dispose()
 		{
-			((IDisposable)webClient).Dispose();
+			((IDisposable)_webClient).Dispose();
 		}
 
 		private void UpdateTextBox_TextChanged(object sender, TextChangedEventArgs e)
 		{
 			if (UpdateTextBox.Text.Length == 0)
 			{
-				m_minutes = 5;
+				_minutes = 5;
 				return;
 			}
 
@@ -271,32 +267,32 @@ namespace G2AChecker
 			if (int.TryParse(UpdateTextBox.Text, out minutes))
 			{
 				UpdateCheckBox.IsChecked = false;
-				m_minutes = (minutes > 4) ? minutes : 5;
-				UpdateTextBox.Text = m_minutes.ToString();
+				_minutes = (minutes > 4) ? minutes : 5;
+				UpdateTextBox.Text = _minutes.ToString();
 			}
 			else
 			{
-				UpdateTextBox.Text = m_minutes.ToString();
+				UpdateTextBox.Text = _minutes.ToString();
 			}
 		}
 
 		private void UpButton_Click(object sender, RoutedEventArgs e)
 		{
 			UpdateCheckBox.IsChecked = false;
-			++m_minutes;
-			UpdateTextBox.Text = m_minutes.ToString();
+			++_minutes;
+			UpdateTextBox.Text = _minutes.ToString();
 		}
 
 		private void DownButton_Click(object sender, RoutedEventArgs e)
 		{
 			UpdateCheckBox.IsChecked = false;
-			--m_minutes;
-			UpdateTextBox.Text = m_minutes.ToString();
+			--_minutes;
+			UpdateTextBox.Text = _minutes.ToString();
 		}
 
 		private void UpdateTextBox_LostFocus(object sender, RoutedEventArgs e)
 		{
-			UpdateTextBox.Text = m_minutes.ToString();
+			UpdateTextBox.Text = _minutes.ToString();
 		}
 	}
 }
