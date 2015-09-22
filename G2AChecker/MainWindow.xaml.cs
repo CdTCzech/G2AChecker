@@ -60,50 +60,59 @@ namespace G2AChecker
 				return;
 			}
 
-			int index;
-			if ((index = pageString.IndexOf("productForSarex = ", StringComparison.Ordinal)) != -1)
+			int indexOfName, indexOfId;
+			if ((indexOfName = pageString.IndexOf("<h1 itemprop=\"name\">", StringComparison.Ordinal)) != -1 &&
+				(indexOfId = pageString.IndexOf("var productID =", StringComparison.Ordinal)) != -1)
 			{
-				var endIndex = pageString.IndexOf(";", index, StringComparison.Ordinal);
-				var gameJson = pageString.Substring(index + 18, endIndex - (index + 18));
+				var endIndexOfName = pageString.IndexOf("</h1>", indexOfName, StringComparison.Ordinal);
+				var endIndexOfId = pageString.IndexOf(";", indexOfId, StringComparison.Ordinal);
 
-				var parsedGameJson = JObject.Parse(gameJson);
-				var gameId = parsedGameJson["_product"]["id"].Value<int>();
-				gameName = parsedGameJson["_product"]["name"].ToString();
+				gameName = pageString.Substring(indexOfName + 20, endIndexOfName - (indexOfName + 20)).Trim();
+				var id = pageString.Substring(indexOfId + 15, endIndexOfId - (indexOfId + 15)).Trim();
 
-				if (!m_games.Keys.Contains(gameId))
+				int gameId;
+				if (int.TryParse(id, out gameId))
 				{
-					decimal price;
-
-					try
+					if (!m_games.ContainsKey(gameId))
 					{
-						var result =
-							JObject.Parse(webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + gameId));
+						decimal price;
 
-						price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
-							MidpointRounding.AwayFromZero);
-					}
-					catch (Exception)
-					{
-						price = 0;
-						ShowMessageBox("Game " + gameName + " doesn't have any offers.", "Information");
-					}
-
-					m_games.Add(gameId,
-						new Game()
+						try
 						{
-							Id = gameId,
-							Name = gameName,
-							Price = price,
-							MinPrice = price,
-							MinPriceDate = DateTime.Now,
-							Url = UrlTextBox.Text
+							var result =
+								JObject.Parse(webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + gameId));
+
+							price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
+								MidpointRounding.AwayFromZero);
 						}
-					);
-					SaveDatabase();
+						catch (Exception)
+						{
+							price = 0;
+							ShowMessageBox("Game " + gameName + " doesn't have any offers.", "Information");
+						}
+
+						m_games.Add(gameId,
+							new Game()
+							{
+								Id = gameId,
+								Name = gameName,
+								Price = price,
+								MinPrice = price,
+								MinPriceDate = DateTime.Now,
+								Url = UrlTextBox.Text
+							}
+						);
+						SaveDatabase();
+					}
+					else
+					{
+						ShowMessageBox("Game already added.", "Error");
+						return;
+					}
 				}
 				else
 				{
-					ShowMessageBox("Game already added.", "Error");
+					ShowMessageBox("G2A changed API. Cannot parse id.", "Error");
 					return;
 				}
 			}
