@@ -23,21 +23,29 @@ namespace G2AChecker
 		public MainWindow()
 		{
 			InitializeComponent();
-			try
-			{
-				var gamesJson = (JObject.Parse(File.ReadAllText(@"db.json"))["games"]).ToString();
-				var games = JsonConvert.DeserializeObject<List<Game>>(gamesJson);
-				_games = games.ToDictionary(g => g.Id, g => g);
-			}
-			catch (Exception)
-			{
-				ShowMessageBox("Creating new database.", "Information");
-			}
 
 			GamesDataGrid.IsReadOnly = true;
 			_dispatcherTimer.Tick += dispatcherTimer_Tick;
 			_dispatcherTimer.Interval = new TimeSpan(1, 0, 0);
 			_minutes = 60;
+
+			try
+			{
+				var json = JObject.Parse(File.ReadAllText(@"db.json"));
+				var gamesJson = (json["games"]).ToString();
+				var games = JsonConvert.DeserializeObject<List<Game>>(gamesJson);
+				_games = games.ToDictionary(g => g.Id, g => g);
+				var settingsJson = (json["settings"]).ToString();
+				var settings = JsonConvert.DeserializeObject<Settings>(settingsJson);
+				if (settings.UpdateEveryXMinutes > 4) _minutes = settings.UpdateEveryXMinutes;
+				UpdateTextBox.Text = _minutes.ToString();
+				InformationCheckBox.IsChecked = settings.ShowInformation;
+				UpdateCheckBox.IsChecked = settings.UpdateAutomaticly;
+			}
+			catch (Exception)
+			{
+				ShowMessageBox("Creating new database.", "Information");
+			}
 		}
 
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -223,13 +231,22 @@ namespace G2AChecker
 			GamesDataGrid.Items.Refresh();
 		}
 
-
 		private void SaveDatabase()
 		{
 			var toStore = new JObject
 					{
 						{
 							"games", JToken.FromObject(_games.Values)
+						},
+						{
+							"settings", JToken.FromObject(
+								new Settings()
+								{
+									UpdateAutomaticly = UpdateCheckBox.IsChecked != null && UpdateCheckBox.IsChecked.Value,
+									UpdateEveryXMinutes = _minutes,
+									ShowInformation = InformationCheckBox.IsChecked != null && InformationCheckBox.IsChecked.Value
+								}
+							)
 						}
 					};
 			try
@@ -246,11 +263,13 @@ namespace G2AChecker
 		{
 			_dispatcherTimer.Interval = new TimeSpan(0, _minutes, 0);
 			_dispatcherTimer.Start();
+			SaveDatabase();
 		}
 
 		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
 		{
 			_dispatcherTimer.Stop();
+			SaveDatabase();
 		}
 
 		private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -310,6 +329,18 @@ namespace G2AChecker
 		private void UpdateTextBox_LostFocus(object sender, RoutedEventArgs e)
 		{
 			UpdateTextBox.Text = _minutes.ToString();
+			SaveDatabase();
 		}
+
+		private void InformationCheckBox_Checked(object sender, RoutedEventArgs e)
+		{
+			SaveDatabase();
+		}
+
+		private void InformationCheckBox_Unchecked(object sender, RoutedEventArgs e)
+		{
+			SaveDatabase();
+		}
+
 	}
 }
