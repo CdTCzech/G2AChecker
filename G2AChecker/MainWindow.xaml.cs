@@ -272,7 +272,7 @@ namespace G2AChecker
 		{
 			SaveDatabase();
 		}
-		#endregion
+#endregion
 
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
 		{
@@ -344,7 +344,7 @@ namespace G2AChecker
 			UpdateTextBox.Text = _minutes.ToString();
 			SaveDatabase();
 		}
-		#endregion
+#endregion
 
 		public void Dispose()
 		{
