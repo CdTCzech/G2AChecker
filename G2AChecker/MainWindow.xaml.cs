@@ -304,7 +304,6 @@ namespace G2AChecker
 			{
 				UpdateCheckBox.IsChecked = false;
 				_minutes = (minutes > 4) ? minutes : 5;
-				UpdateTextBox.Text = _minutes.ToString();
 			}
 			else
 			{
