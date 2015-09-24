@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:G2AChecker"
         mc:Ignorable="d"
-        Title="G2AChecker" Height="600" Width="898.29" Loaded="Window_Loaded">
+        Title="G2AChecker" Height="600" Width="900" Loaded="Window_Loaded" MinWidth="900" MinHeight="600">
     <Window.Resources>
         <CollectionViewSource x:Key="gameViewSource" d:DesignSource="{d:DesignInstance {x:Type local:Game}, CreateList=True}"/>
     </Window.Resources>
