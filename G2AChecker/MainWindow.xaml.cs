@@ -14,6 +14,8 @@ namespace G2AChecker
 {
 	public partial class MainWindow : IDisposable
 	{
+		private delegate void UpdateProgressBarDelegate(DependencyProperty dp, object value);
+
 		private readonly WebClient _webClient = new WebClient();
 		private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
 		private readonly Dictionary<int, Game> _games = new Dictionary<int, Game>();
@@ -48,10 +50,99 @@ namespace G2AChecker
 			}
 		}
 
-		private void dispatcherTimer_Tick(object sender, EventArgs e)
+		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
-			updateButton_Click(new object(), new RoutedEventArgs());
+			var gameViewSource = ((System.Windows.Data.CollectionViewSource)(FindResource("gameViewSource")));
+			gameViewSource.Source = _games.Values;
 		}
+
+		private ICollection<int> GetSelectedIds(object sender)
+		{
+			var ids = new List<int>();
+			var item = ((sender as MenuItem)?.Parent as ContextMenu)?.PlacementTarget as DataGrid;
+			var selectedGames = item?.SelectedItems;
+
+			if (selectedGames == null) return ids;
+			ids.AddRange(from Game game in selectedGames where game != null && _games.ContainsKey(game.Id) select game.Id);
+
+			return ids;
+		}
+
+		private void SaveAndRefresh()
+		{
+			SaveDatabase();
+			GamesDataGrid.Items.Refresh();
+		}
+
+		private void SaveDatabase()
+		{
+			var toStore = new JObject
+					{
+						{
+							"games", JToken.FromObject(_games.Values)
+						},
+						{
+							"settings", JToken.FromObject(
+								new Settings()
+								{
+									UpdateAutomaticly = UpdateCheckBox.IsChecked != null && UpdateCheckBox.IsChecked.Value,
+									UpdateEveryXMinutes = _minutes,
+									ShowInformation = InformationCheckBox.IsChecked != null && InformationCheckBox.IsChecked.Value
+								}
+							)
+						}
+					};
+			try
+			{
+				File.WriteAllText(@"db.json", toStore.ToString());
+			}
+			catch (Exception)
+			{
+				ShowMessageBox("Cannot save database.", "Error");
+			}
+		}
+
+		private void ShowMessageBox(string text, string caption)
+		{
+			if (InformationCheckBox.IsChecked == true)
+			{
+				MessageBox.Show(text, caption);
+			}
+		}
+
+		private void UpdateGames(ICollection<int> ids)
+		{
+			ProgressBar.Minimum = 0;
+			ProgressBar.Maximum = ids.Count;
+			ProgressBar.Value = 0;
+
+			UpdateProgressBarDelegate updatePbDelegate = ProgressBar.SetValue;
+
+			foreach (var id in ids)
+			{
+				try
+				{
+					var result = JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + id));
+					_games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
+						MidpointRounding.AwayFromZero);
+					if (_games[id].MinPrice > _games[id].Price || _games[id].MinPrice == 0)
+					{
+						_games[id].MinPrice = _games[id].Price;
+						_games[id].MinPriceDate = DateTime.Now;
+					}
+					_games[id].LastTimeUpdated = DateTime.Now;
+				}
+				catch (Exception)
+				{
+					_games[id].Price = 0;
+					ShowMessageBox("Game " + _games[id].Name + " doesn't have any offers.", "Information");
+				}
+
+				Dispatcher.Invoke(updatePbDelegate, DispatcherPriority.Background, ValueProperty, ++ProgressBar.Value);
+			}
+		}
+
+#region Buttons
 
 		private void addGameButton_Click(object sender, RoutedEventArgs e)
 		{
@@ -135,8 +226,6 @@ namespace G2AChecker
 			ShowMessageBox("Game " + gameName + " added.", "Information");
 		}
 
-		private delegate void UpdateProgressBarDelegate(DependencyProperty dp, object value);
-
 		private void updateButton_Click(object sender, RoutedEventArgs e)
 		{
 			UpdateGames(_games.Keys);
@@ -145,49 +234,52 @@ namespace G2AChecker
 			ShowMessageBox("All games refreshed.", "Information");
 		}
 
-		private void UpdateGames(ICollection<int> ids)
+		private void UpButton_Click(object sender, RoutedEventArgs e)
 		{
-			ProgressBar.Minimum = 0;
-			ProgressBar.Maximum = ids.Count;
-			ProgressBar.Value = 0;
-
-			UpdateProgressBarDelegate updatePbDelegate = ProgressBar.SetValue;
-
-			foreach (var id in ids)
-			{
-				try
-				{
-					var result = JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + id));
-					_games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
-						MidpointRounding.AwayFromZero);
-					if (_games[id].MinPrice > _games[id].Price || _games[id].MinPrice == 0)
-					{
-						_games[id].MinPrice = _games[id].Price;
-						_games[id].MinPriceDate = DateTime.Now;
-					}
-					_games[id].LastTimeUpdated = DateTime.Now;
-				}
-				catch (Exception)
-				{
-					_games[id].Price = 0;
-					ShowMessageBox("Game " + _games[id].Name + " doesn't have any offers.", "Information");
-				}
-
-				Dispatcher.Invoke(updatePbDelegate, DispatcherPriority.Background, ValueProperty, ++ProgressBar.Value);
-			}
+			UpdateCheckBox.IsChecked = false;
+			++_minutes;
+			UpdateTextBox.Text = _minutes.ToString();
 		}
 
-		private ICollection<int> GetSelectedIds(object sender)
+		private void DownButton_Click(object sender, RoutedEventArgs e)
 		{
-			var ids = new List<int>();
-			var item = ((sender as MenuItem)?.Parent as ContextMenu)?.PlacementTarget as DataGrid;
-			var selectedGames = item?.SelectedItems;
-
-			if (selectedGames == null) return ids;
-			ids.AddRange(from Game game in selectedGames where game != null && _games.ContainsKey(game.Id) select game.Id);
-
-			return ids;
+			UpdateCheckBox.IsChecked = false;
+			--_minutes;
+			UpdateTextBox.Text = _minutes.ToString();
 		}
+#endregion
+#region CheckBoxes
+
+		private void updateCheckBox_Checked(object sender, RoutedEventArgs e)
+		{
+			_dispatcherTimer.Interval = new TimeSpan(0, _minutes, 0);
+			_dispatcherTimer.Start();
+			SaveDatabase();
+		}
+
+		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
+		{
+			_dispatcherTimer.Stop();
+			SaveDatabase();
+		}
+
+		private void InformationCheckBox_Checked(object sender, RoutedEventArgs e)
+		{
+			SaveDatabase();
+		}
+
+		private void InformationCheckBox_Unchecked(object sender, RoutedEventArgs e)
+		{
+			SaveDatabase();
+		}
+		#endregion
+
+		private void dispatcherTimer_Tick(object sender, EventArgs e)
+		{
+			updateButton_Click(new object(), new RoutedEventArgs());
+		}
+
+#region MenuItems
 
 		private void DeleteMenuItem(object sender, RoutedEventArgs e)
 		{
@@ -224,72 +316,8 @@ namespace G2AChecker
 
 			SaveAndRefresh();
 		}
-
-		private void SaveAndRefresh()
-		{
-			SaveDatabase();
-			GamesDataGrid.Items.Refresh();
-		}
-
-		private void SaveDatabase()
-		{
-			var toStore = new JObject
-					{
-						{
-							"games", JToken.FromObject(_games.Values)
-						},
-						{
-							"settings", JToken.FromObject(
-								new Settings()
-								{
-									UpdateAutomaticly = UpdateCheckBox.IsChecked != null && UpdateCheckBox.IsChecked.Value,
-									UpdateEveryXMinutes = _minutes,
-									ShowInformation = InformationCheckBox.IsChecked != null && InformationCheckBox.IsChecked.Value
-								}
-							)
-						}
-					};
-			try
-			{
-				File.WriteAllText(@"db.json", toStore.ToString());
-			}
-			catch (Exception)
-			{
-				ShowMessageBox("Cannot save database.", "Error");
-			}
-		}
-
-		private void updateCheckBox_Checked(object sender, RoutedEventArgs e)
-		{
-			_dispatcherTimer.Interval = new TimeSpan(0, _minutes, 0);
-			_dispatcherTimer.Start();
-			SaveDatabase();
-		}
-
-		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
-		{
-			_dispatcherTimer.Stop();
-			SaveDatabase();
-		}
-
-		private void Window_Loaded(object sender, RoutedEventArgs e)
-		{
-			var gameViewSource = ((System.Windows.Data.CollectionViewSource)(FindResource("gameViewSource")));
-			gameViewSource.Source = _games.Values;
-		}
-
-		private void ShowMessageBox(string text, string caption)
-		{
-			if (InformationCheckBox.IsChecked == true)
-			{
-				MessageBox.Show(text, caption);
-			}
-		}
-
-		public void Dispose()
-		{
-			((IDisposable)_webClient).Dispose();
-		}
+#endregion
+#region TextBoxes
 
 		private void UpdateTextBox_TextChanged(object sender, TextChangedEventArgs e)
 		{
@@ -311,35 +339,16 @@ namespace G2AChecker
 			}
 		}
 
-		private void UpButton_Click(object sender, RoutedEventArgs e)
-		{
-			UpdateCheckBox.IsChecked = false;
-			++_minutes;
-			UpdateTextBox.Text = _minutes.ToString();
-		}
-
-		private void DownButton_Click(object sender, RoutedEventArgs e)
-		{
-			UpdateCheckBox.IsChecked = false;
-			--_minutes;
-			UpdateTextBox.Text = _minutes.ToString();
-		}
-
 		private void UpdateTextBox_LostFocus(object sender, RoutedEventArgs e)
 		{
 			UpdateTextBox.Text = _minutes.ToString();
 			SaveDatabase();
 		}
+		#endregion
 
-		private void InformationCheckBox_Checked(object sender, RoutedEventArgs e)
+		public void Dispose()
 		{
-			SaveDatabase();
+			((IDisposable)_webClient).Dispose();
 		}
-
-		private void InformationCheckBox_Unchecked(object sender, RoutedEventArgs e)
-		{
-			SaveDatabase();
-		}
-
 	}
 }
