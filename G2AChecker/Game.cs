@@ -9,6 +9,7 @@ namespace G2AChecker
 		public decimal Price { get; set; }
 		public decimal MinPrice { get; set; }
 		public DateTime MinPriceDate { get; set; }
+		public DateTime LastTimeUpdated { get; set; }
 		public string Url { get; set; }
 	}
 }

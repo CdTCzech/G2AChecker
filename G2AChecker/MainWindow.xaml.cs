@@ -99,6 +99,7 @@ namespace G2AChecker
 								Price = price,
 								MinPrice = price,
 								MinPriceDate = DateTime.Now,
+								LastTimeUpdated = DateTime.Now,
 								Url = UrlTextBox.Text
 							}
 						);
@@ -157,6 +158,7 @@ namespace G2AChecker
 						_games[id].MinPrice = _games[id].Price;
 						_games[id].MinPriceDate = DateTime.Now;
 					}
+					_games[id].LastTimeUpdated = DateTime.Now;
 				}
 				catch (Exception)
 				{
