@@ -19,6 +19,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Open in browser" Click="OpenInBrowserMenuItem"/>
+                    <MenuItem Header="Reset minimal price" Click="ResetMenuItem"/>
                     <MenuItem Header="Update" Click="UpdateMenuItem"/>
                     <MenuItem Header="Delete" Click="DeleteMenuItem"/>
                 </ContextMenu>

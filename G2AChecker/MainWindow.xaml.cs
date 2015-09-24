@@ -103,7 +103,6 @@ namespace G2AChecker
 								Url = UrlTextBox.Text
 							}
 						);
-						SaveDatabase();
 					}
 					else
 					{
@@ -123,7 +122,8 @@ namespace G2AChecker
 				return;
 			}
 
-			GamesDataGrid.Items.Refresh();
+			UrlTextBox.Text = "";
+			SaveAndRefresh();
 			ShowMessageBox("Game " + gameName + " added.", "Information");
 		}
 
@@ -133,8 +133,7 @@ namespace G2AChecker
 		{
 			UpdateGames(_games.Keys);
 
-			SaveDatabase();
-			GamesDataGrid.Items.Refresh();
+			SaveAndRefresh();
 			ShowMessageBox("All games refreshed.", "Information");
 		}
 
@@ -189,16 +188,14 @@ namespace G2AChecker
 				_games.Remove(id);
 			}
 
-			SaveDatabase();
-			GamesDataGrid.Items.Refresh();
+			SaveAndRefresh();
 		}
 
 		private void UpdateMenuItem(object sender, RoutedEventArgs e)
 		{
 			UpdateGames(GetSelectedIds(sender));
 
-			SaveDatabase();
-			GamesDataGrid.Items.Refresh();
+			SaveAndRefresh();
 		}
 
 		private void OpenInBrowserMenuItem(object sender, RoutedEventArgs e)
@@ -208,6 +205,24 @@ namespace G2AChecker
 				System.Diagnostics.Process.Start(_games[id].Url);
 			}
 		}
+
+		private void ResetMenuItem(object sender, RoutedEventArgs e)
+		{
+			foreach (var id in GetSelectedIds(sender))
+			{
+				_games[id].MinPrice = _games[id].Price;
+				_games[id].MinPriceDate = _games[id].LastTimeUpdated;
+			}
+
+			SaveAndRefresh();
+		}
+
+		private void SaveAndRefresh()
+		{
+			SaveDatabase();
+			GamesDataGrid.Items.Refresh();
+		}
+
 
 		private void SaveDatabase()
 		{
