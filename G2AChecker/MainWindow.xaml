@@ -8,6 +8,9 @@
         Title="G2AChecker" Height="600" Width="900" Loaded="Window_Loaded" MinWidth="900" MinHeight="600">
     <Window.Resources>
         <CollectionViewSource x:Key="gameViewSource" d:DesignSource="{d:DesignInstance {x:Type local:Game}, CreateList=True}"/>
+        <Style x:Key="CellRightAlign">
+            <Setter Property="Control.HorizontalAlignment" Value="Right" />
+        </Style>
     </Window.Resources>
     <Grid DataContext="{StaticResource gameViewSource}">
         <TextBox x:Name="UrlTextBox" HorizontalAlignment="Stretch" Height="23" Margin="10,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="Auto" FontSize="10.667" ToolTip="game url - for example: https://www.g2a.com/mad-max-plus-the-ripper-dlc-steam-cd-key-global.html"/>
@@ -27,8 +30,8 @@
             <DataGrid.Columns>
                 <DataGridTextColumn x:Name="IdColumn" Binding="{Binding Id}" Header="ID" Width="Auto"/>
                 <DataGridTextColumn x:Name="NameColumn" Binding="{Binding Name}" Header="Name" Width="Auto"/>
-                <DataGridTextColumn x:Name="PriceColumn" Binding="{Binding Price}" Header="Price" Width="Auto"/>
-                <DataGridTextColumn x:Name="MinPriceColumn" Binding="{Binding MinPrice}" Header="Minimal Price" Width="Auto"/>
+                <DataGridTextColumn x:Name="PriceColumn" Binding="{Binding Price}" Header="Price" Width="Auto" ElementStyle="{StaticResource CellRightAlign}" />
+                <DataGridTextColumn x:Name="MinPriceColumn" Binding="{Binding MinPrice}" Header="Minimal Price" Width="Auto" ElementStyle="{StaticResource CellRightAlign}" />
                 <DataGridTextColumn x:Name="MinPriceDateColumn" Binding="{Binding MinPriceDate}" Header="Minimal Price Date" Width="Auto"/>
                 <DataGridTextColumn x:Name="LastTimeUpdatedDateColumn" Binding="{Binding LastTimeUpdated}" Header="Last Time Updated" Width="Auto"/>
             </DataGrid.Columns>
