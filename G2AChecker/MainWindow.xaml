@@ -36,7 +36,7 @@
                 <DataGridTextColumn x:Name="LastTimeUpdatedDateColumn" Binding="{Binding LastTimeUpdated}" Header="Last Time Updated" Width="Auto"/>
             </DataGrid.Columns>
         </DataGrid>
-        <CheckBox x:Name="InformationCheckBox" Content="Show Information Dialogs" HorizontalAlignment="Left" Margin="567,41,0,0" VerticalAlignment="Top" IsChecked="True" Unchecked="InformationCheckBox_Unchecked" Checked="InformationCheckBox_Checked"/>
+        <CheckBox x:Name="InformationCheckBox" Content="Show Information Dialogs" HorizontalAlignment="Left" Margin="405,41,0,0" VerticalAlignment="Top" IsChecked="True" />
         <TextBox x:Name="UpdateTextBox" Margin="275,39,0,0" Text="60" TextChanged="UpdateTextBox_TextChanged" HorizontalAlignment="Left" VerticalAlignment="Top" Width="55" Height="20" LostFocus="UpdateTextBox_LostFocus" />
         <Button x:Name="UpButton" Margin="330,39,0,0" Width="15" Click="UpButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Height="10">
             <TextBlock Text="˄" FontSize="9.333" FontWeight="Bold" VerticalAlignment="Center" />
@@ -45,5 +45,6 @@
             <TextBlock Text="˅" FontSize="9.333" FontWeight="Bold" VerticalAlignment="Center" />
         </Button>
         <Label x:Name="UpdateLabel" Content="Minutes." HorizontalAlignment="Left" Margin="345,35,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="SaveSettingsButton" Content="Save Settings" HorizontalAlignment="Left" Margin="567,38,0,0" VerticalAlignment="Top" Width="74" RenderTransformOrigin="0.223,0.275" Click="SaveSettingsButton_Click"/>
     </Grid>
 </Window>

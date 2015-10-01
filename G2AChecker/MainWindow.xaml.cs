@@ -247,6 +247,11 @@ namespace G2AChecker
 			--_minutes;
 			UpdateTextBox.Text = _minutes.ToString();
 		}
+
+		private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
+		{
+			SaveDatabase();
+		}
 #endregion
 #region CheckBoxes
 
@@ -254,31 +259,20 @@ namespace G2AChecker
 		{
 			_dispatcherTimer.Interval = new TimeSpan(0, _minutes, 0);
 			_dispatcherTimer.Start();
-			SaveDatabase();
 		}
 
 		private void updateCheckBox_Unchecked(object sender, RoutedEventArgs e)
 		{
 			_dispatcherTimer.Stop();
-			SaveDatabase();
 		}
-
-		private void InformationCheckBox_Checked(object sender, RoutedEventArgs e)
-		{
-			SaveDatabase();
-		}
-
-		private void InformationCheckBox_Unchecked(object sender, RoutedEventArgs e)
-		{
-			SaveDatabase();
-		}
-#endregion
+		#endregion
+#region Timers
 
 		private void dispatcherTimer_Tick(object sender, EventArgs e)
 		{
 			updateButton_Click(new object(), new RoutedEventArgs());
 		}
-
+#endregion
 #region MenuItems
 
 		private void DeleteMenuItem(object sender, RoutedEventArgs e)
@@ -342,7 +336,6 @@ namespace G2AChecker
 		private void UpdateTextBox_LostFocus(object sender, RoutedEventArgs e)
 		{
 			UpdateTextBox.Text = _minutes.ToString();
-			SaveDatabase();
 		}
 #endregion
 
