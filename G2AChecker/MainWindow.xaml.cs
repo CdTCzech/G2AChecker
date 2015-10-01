@@ -251,6 +251,7 @@ namespace G2AChecker
 		private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
 		{
 			SaveDatabase();
+			ShowMessageBox("Settings saved.", "Information");
 		}
 #endregion
 #region CheckBoxes
