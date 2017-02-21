@@ -16,6 +16,8 @@ namespace G2AChecker
     {
         private delegate void UpdateProgressBarDelegate(DependencyProperty dp, object value);
 
+        private readonly string VERSION = "2017.02.21";
+
         private readonly WebClient _webClient = new WebClient();
         private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
         private readonly Dictionary<int, Game> _games = new Dictionary<int, Game>();
@@ -47,6 +49,19 @@ namespace G2AChecker
             catch (Exception)
             {
                 ShowMessageBox("Creating new database.", "Information");
+            }
+
+            try
+            {
+                var update = checkForUpdates();
+                if (!string.IsNullOrEmpty(update))
+                {
+                    ShowMessageBox("New version available!\nCurrent: " + VERSION + "\nNew: " + update, "Information");
+                }
+            }
+            catch (Exception)
+            {
+                ShowMessageBox("Failed to check updates.", "Error");
             }
         }
 
@@ -142,6 +157,36 @@ namespace G2AChecker
             }
         }
 
+        private string checkForUpdates()
+        {
+            int year, month, day;
+            int.TryParse(VERSION.Substring(0, 4), out year);
+            int.TryParse(VERSION.Substring(5, 2), out month);
+            int.TryParse(VERSION.Substring(8, 2), out day);
+
+            var pageString = _webClient.DownloadString("https://github.com/CdTCzech/G2AChecker/releases");
+
+            var toFind = "Version at end of ";
+            int startIndexVersion = pageString.IndexOf(toFind, StringComparison.Ordinal);
+            startIndexVersion += toFind.Length;
+            var endIndexVersion = pageString.IndexOf("</a>", startIndexVersion, StringComparison.Ordinal);
+            var webVersion = pageString.Substring(startIndexVersion, endIndexVersion - startIndexVersion).Trim();
+
+            int webYear, webMonth, webDay;
+            int.TryParse(webVersion.Substring(0, 4), out webYear);
+            int.TryParse(webVersion.Substring(2, 2), out webMonth);
+            int.TryParse(webVersion.Substring(8, 2), out webDay);
+
+            if ((webYear > year) || (webYear == year && webMonth > month) || (webYear == year && webMonth == month && webDay > day))
+            {
+                return webVersion;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
         #region Buttons
 
         private void addGameButton_Click(object sender, RoutedEventArgs e)
@@ -164,8 +209,8 @@ namespace G2AChecker
             int startIndexOfProductData;
             if ((startIndexOfProductData = pageString.IndexOf(productDataString, StringComparison.Ordinal)) != -1)
             {
-                var endIndexOfProductData = pageString.IndexOf("};", startIndexOfProductData, StringComparison.Ordinal);
                 startIndexOfProductData += productDataString.Length;
+                var endIndexOfProductData = pageString.IndexOf("};", startIndexOfProductData, StringComparison.Ordinal);
                 var productData = pageString.Substring(startIndexOfProductData, endIndexOfProductData - startIndexOfProductData).Trim();
                 dynamic json = JsonConvert.DeserializeObject(productData + '}');
 
@@ -250,11 +295,16 @@ namespace G2AChecker
             UpdateTextBox.Text = _minutes.ToString();
         }
 
-        private void SaveSettingsButton_Click(object sender, RoutedEventArgs e)
+        private void saveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
             SaveDatabase();
             ShowMessageBox("Settings saved.", "Information");
         }
+
+        private void exportButton_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
         #endregion
         #region CheckBoxes
 
