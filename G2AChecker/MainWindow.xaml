@@ -16,7 +16,7 @@
         <TextBox x:Name="UrlTextBox" HorizontalAlignment="Stretch" Height="23" Margin="10,10,10,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="Auto" FontSize="10.667" ToolTip="game url - for example: https://www.g2a.com/mad-max-plus-the-ripper-dlc-steam-cd-key-global.html"/>
         <Button x:Name="AddGameButton" Content="Add Game" HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Width="75" Click="addGameButton_Click"/>
         <Button x:Name="UpdateButton" Content="Update Prices" HorizontalAlignment="Left" Margin="90,38,0,0" VerticalAlignment="Top" Width="84" Click="updateButton_Click"/>
-        <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Left" Height="20" Margin="911,38,0,0" VerticalAlignment="Top" Width="150"/>
+        <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Left" Height="20" Margin="910,38,0,0" VerticalAlignment="Top" Width="145"/>
         <CheckBox x:Name="UpdateCheckBox" Content="Update Every: " HorizontalAlignment="Left" Margin="179,41,0,0" VerticalAlignment="Top" Checked="updateCheckBox_Checked" Unchecked="updateCheckBox_Unchecked"/>
         <DataGrid x:Name="GamesDataGrid" AutoGenerateColumns="False" EnableRowVirtualization="True" ItemsSource="{Binding}" Margin="9,63,11,10">
             <DataGrid.ContextMenu>
@@ -45,7 +45,8 @@
             <TextBlock Text="˅" FontSize="9.333" FontWeight="Bold" VerticalAlignment="Center" />
         </Button>
         <Label x:Name="UpdateLabel" Content="Minutes." HorizontalAlignment="Left" Margin="345,35,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="SaveSettingsButton" Content="Save Settings" HorizontalAlignment="Left" Margin="567,38,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="0.223,0.275" Click="saveSettingsButton_Click"/>
-        <Button x:Name="ExportButton" Content="Export to CSV" HorizontalAlignment="Left" Margin="650,38,0,0" VerticalAlignment="Top" Width="80" RenderTransformOrigin="0.223,0.275" Click="exportButton_Click"/>
+        <Button x:Name="SaveSettingsButton" Content="Save All" HorizontalAlignment="Left" Margin="565,38,0,0" VerticalAlignment="Top" Width="50" RenderTransformOrigin="0.223,0.275" Click="saveSettingsButton_Click"/>
+        <Button x:Name="ExportButton" Content="Export to CSV" HorizontalAlignment="Left" Margin="620,38,0,0" VerticalAlignment="Top" Width="80" RenderTransformOrigin="0.223,0.275" Click="exportButton_Click"/>
+        <Button x:Name="UpdatesButton" Content="Check for Updates" HorizontalAlignment="Left" Margin="800,38,0,0" VerticalAlignment="Top" Width="105" RenderTransformOrigin="0.223,0.275" Click="updatesButton_Click"/>
     </Grid>
 </Window>

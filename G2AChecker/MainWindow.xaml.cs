@@ -16,7 +16,7 @@ namespace G2AChecker
     {
         private delegate void UpdateProgressBarDelegate(DependencyProperty dp, object value);
 
-        private readonly string VERSION = "2017.02.21";
+        private readonly string VERSION = "201702221040";
 
         private readonly WebClient _webClient = new WebClient();
         private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
@@ -49,19 +49,6 @@ namespace G2AChecker
             catch (Exception)
             {
                 ShowMessageBox("Creating new database.", "Information");
-            }
-
-            try
-            {
-                var update = checkForUpdates();
-                if (!string.IsNullOrEmpty(update))
-                {
-                    ShowMessageBox("New version available!\nCurrent: " + VERSION + "\nNew: " + update, "Information");
-                }
-            }
-            catch (Exception)
-            {
-                ShowMessageBox("Failed to check updates.", "Error");
             }
         }
 
@@ -117,9 +104,9 @@ namespace G2AChecker
             }
         }
 
-        private void ShowMessageBox(string text, string caption)
+        private void ShowMessageBox(string text, string caption, bool ignoreCheckBox = false)
         {
-            if (InformationCheckBox.IsChecked == true)
+            if (InformationCheckBox.IsChecked == true || ignoreCheckBox == true)
             {
                 MessageBox.Show(text, caption);
             }
@@ -159,27 +146,16 @@ namespace G2AChecker
 
         private string checkForUpdates()
         {
-            int year, month, day;
-            int.TryParse(VERSION.Substring(0, 4), out year);
-            int.TryParse(VERSION.Substring(5, 2), out month);
-            int.TryParse(VERSION.Substring(8, 2), out day);
+            var pageString = _webClient.DownloadString("https://raw.githubusercontent.com/CdTCzech/G2AChecker/master/G2AChecker/VERSION.txt");
 
-            var pageString = _webClient.DownloadString("https://github.com/CdTCzech/G2AChecker/releases");
+            long localVersion;
+            long.TryParse(VERSION, out localVersion);
+            long webVersion;
+            long.TryParse(pageString, out webVersion);
 
-            var toFind = "Version at end of ";
-            int startIndexVersion = pageString.IndexOf(toFind, StringComparison.Ordinal);
-            startIndexVersion += toFind.Length;
-            var endIndexVersion = pageString.IndexOf("</a>", startIndexVersion, StringComparison.Ordinal);
-            var webVersion = pageString.Substring(startIndexVersion, endIndexVersion - startIndexVersion).Trim();
-
-            int webYear, webMonth, webDay;
-            int.TryParse(webVersion.Substring(0, 4), out webYear);
-            int.TryParse(webVersion.Substring(2, 2), out webMonth);
-            int.TryParse(webVersion.Substring(8, 2), out webDay);
-
-            if ((webYear > year) || (webYear == year && webMonth > month) || (webYear == year && webMonth == month && webDay > day))
+            if (webVersion > localVersion)
             {
-                return webVersion;
+                return pageString;
             }
             else
             {
@@ -298,11 +274,54 @@ namespace G2AChecker
         private void saveSettingsButton_Click(object sender, RoutedEventArgs e)
         {
             SaveDatabase();
-            ShowMessageBox("Settings saved.", "Information");
+            ShowMessageBox("Settings saved to \"db.json\".", "Information");
         }
 
         private void exportButton_Click(object sender, RoutedEventArgs e)
         {
+            string output = "";
+            foreach (var game in _games)
+            {
+                var values = new string[] { game.Value.Name, game.Value.Price.ToString(),
+                                            game.Value.MinPrice.ToString(), game.Value.MinPriceDate.ToString(),
+                                            game.Value.LastTimeUpdated.ToString()
+                };
+
+                output += game.Value.Id.ToString();
+                foreach (var value in values)
+                {
+                    var replaced = value.Replace("\"", "\"\"");
+                    output += ",\"" + replaced + "\"";
+                }
+                output += "\n";
+            }
+            File.WriteAllText(@"games.csv", output);
+            ShowMessageBox("Game informations exported to \"games.csv\".", "Information");
+        }
+
+        private void updatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var update = checkForUpdates();
+                var firstLine = "New version available!\n";
+                var isCurrent = string.IsNullOrEmpty(update);
+                if (isCurrent)
+                {
+                    firstLine = "You have current version.\n";
+                }
+                var localVersion = VERSION.Substring(0, 4) + '.' + VERSION.Substring(4, 2) +'.' + VERSION.Substring(6, 2) + ' ' + VERSION.Substring(8, 2) + ':' + VERSION.Substring(10, 2);
+                string webVersion = "";
+                if (!isCurrent)
+                {
+                    webVersion = "\nNew: " + update.Substring(0, 4) + '.' + update.Substring(4, 2) + '.' + update.Substring(6, 2) + ' ' + update.Substring(8, 2) + ':' + update.Substring(10, 2);
+                }
+                ShowMessageBox(firstLine + "Current: " + localVersion + webVersion, "Information", true);
+            }
+            catch (Exception)
+            {
+                ShowMessageBox("Failed to check updates.", "Error");
+            }
         }
 
         #endregion
