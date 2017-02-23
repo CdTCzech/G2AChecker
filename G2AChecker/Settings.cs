@@ -5,5 +5,6 @@
 		public bool UpdateAutomaticly { get; set; }
 		public int UpdateEveryXMinutes { get; set; }
 		public bool ShowInformation { get; set; }
-	}
+        public string Currency { get; set; }
+    }
 }

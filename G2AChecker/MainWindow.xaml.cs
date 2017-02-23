@@ -20,7 +20,8 @@ namespace G2AChecker
 
         private readonly WebClient _webClient = new WebClient();
         private readonly DispatcherTimer _dispatcherTimer = new DispatcherTimer();
-        private readonly Dictionary<int, Game> _games = new Dictionary<int, Game>();
+        private Dictionary<int, Game> _games = new Dictionary<int, Game>();
+        private Dictionary<string, decimal> _rates = new Dictionary<string, decimal>();
 
         private int _minutes;
 
@@ -45,6 +46,7 @@ namespace G2AChecker
                 UpdateTextBox.Text = _minutes.ToString();
                 InformationCheckBox.IsChecked = settings.ShowInformation;
                 UpdateCheckBox.IsChecked = settings.UpdateAutomaticly;
+                comboBox.SelectedValue = settings.Currency;
             }
             catch (Exception)
             {
@@ -89,7 +91,8 @@ namespace G2AChecker
                                 {
                                     UpdateAutomaticly = UpdateCheckBox.IsChecked != null && UpdateCheckBox.IsChecked.Value,
                                     UpdateEveryXMinutes = _minutes,
-                                    ShowInformation = InformationCheckBox.IsChecked != null && InformationCheckBox.IsChecked.Value
+                                    ShowInformation = InformationCheckBox.IsChecked != null && InformationCheckBox.IsChecked.Value,
+                                    Currency = comboBox.SelectedItem as string
                                 }
                             )
                         }
@@ -125,7 +128,7 @@ namespace G2AChecker
                 try
                 {
                     var result = JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + id));
-                    _games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
+                    _games[id].Price = Math.Round(result["a"].First.First.ToObject<JObject>()["ep"].Value<decimal>(), 3,
                         MidpointRounding.AwayFromZero);
                     if (_games[id].MinPrice > _games[id].Price || _games[id].MinPrice == 0)
                     {
@@ -161,6 +164,22 @@ namespace G2AChecker
             {
                 return "";
             }
+        }
+
+        private void updateRates()
+        {
+            try
+            {
+                var pageString = _webClient.DownloadString("https://www.g2a.com/currency-rates.js");
+
+                var test = pageString.Substring(14, pageString.Length - 14 - 1);
+                _rates = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(test);
+            }
+            catch (Exception)
+            {
+                ShowMessageBox("Could not update currency rates.", "Error");
+            }
+
         }
 
         #region Buttons
@@ -210,7 +229,7 @@ namespace G2AChecker
                         var result =
                             JObject.Parse(_webClient.DownloadString("https://www.g2a.com/marketplace/product/auctions/?id=" + gameId));
 
-                        price = Math.Round(result["a"].First.First.ToObject<JObject>()["p"].Value<decimal>(), 3,
+                        price = Math.Round(result["a"].First.First.ToObject<JObject>()["ep"].Value<decimal>(), 3,
                             MidpointRounding.AwayFromZero);
                     }
                     catch (Exception)
@@ -228,7 +247,8 @@ namespace G2AChecker
                             MinPrice = price,
                             MinPriceDate = DateTime.Now,
                             LastTimeUpdated = DateTime.Now,
-                            Url = UrlTextBox.Text
+                            Url = UrlTextBox.Text,
+                            Rate = 1
                         }
                     );
                 }
@@ -251,10 +271,11 @@ namespace G2AChecker
 
         private void updateButton_Click(object sender, RoutedEventArgs e)
         {
+            updateRates();
             UpdateGames(_games.Keys);
 
             SaveAndRefresh();
-            ShowMessageBox("All games refreshed.", "Information");
+            ShowMessageBox("All games updated.", "Information");
         }
 
         private void UpButton_Click(object sender, RoutedEventArgs e)
@@ -316,7 +337,7 @@ namespace G2AChecker
                 {
                     webVersion = "\nNew: " + update.Substring(0, 4) + '.' + update.Substring(4, 2) + '.' + update.Substring(6, 2) + ' ' + update.Substring(8, 2) + ':' + update.Substring(10, 2);
                 }
-                ShowMessageBox(firstLine + "Current: " + localVersion + webVersion, "Information", true);
+                ShowMessageBox(firstLine + "Current: " + localVersion + webVersion + "\nhttps://github.com/CdTCzech/G2AChecker/releases", "Information", true);
             }
             catch (Exception)
             {
@@ -410,6 +431,37 @@ namespace G2AChecker
             UpdateTextBox.Text = _minutes.ToString();
         }
         #endregion
+
+        private void comboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_rates.Count == 0)
+            {
+                updateRates();
+            }
+
+            var currencies = _rates.Keys.ToList();
+            currencies.Insert(0, "EUR");
+
+            comboBox.ItemsSource = currencies;
+        }
+
+        private void comboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = sender as ComboBox;
+            var currency = comboBox.SelectedItem as string;
+            decimal rate = 1;
+            if (currency != "EUR")
+            {
+                rate = _rates[currency];
+            }
+
+            foreach (var game in _games)
+            {
+                game.Value.Rate = rate;
+            }
+
+            SaveAndRefresh();
+        }
 
         public void Dispose()
         {

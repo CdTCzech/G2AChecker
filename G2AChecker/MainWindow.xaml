@@ -48,5 +48,6 @@
         <Button x:Name="SaveSettingsButton" Content="Save All" HorizontalAlignment="Left" Margin="565,38,0,0" VerticalAlignment="Top" Width="50" RenderTransformOrigin="0.223,0.275" Click="saveSettingsButton_Click"/>
         <Button x:Name="ExportButton" Content="Export to CSV" HorizontalAlignment="Left" Margin="620,38,0,0" VerticalAlignment="Top" Width="80" RenderTransformOrigin="0.223,0.275" Click="exportButton_Click"/>
         <Button x:Name="UpdatesButton" Content="Check for Updates" HorizontalAlignment="Left" Margin="800,38,0,0" VerticalAlignment="Top" Width="105" RenderTransformOrigin="0.223,0.275" Click="updatesButton_Click"/>
+        <ComboBox x:Name="comboBox" HorizontalAlignment="Left" Margin="705,38,0,0" VerticalAlignment="Top" Width="90" Loaded="comboBox_Loaded" SelectionChanged="comboBox_SelectionChanged"/>
     </Grid>
 </Window>
